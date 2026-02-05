@@ -1,4 +1,5 @@
 # Stellar Evolutionary Stage Heuristic Assessment Tool (SESHAT)
+![SESHAT logo](src/seshat_classifier/data/SESHAT_new.png "")
 
 This is a beta version of the SESHAT tool, currently being modified for publication.  
 The final version will be released pending any suggestions from the referee.
