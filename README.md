@@ -1,9 +1,6 @@
 # Stellar Evolutionary Stage Heuristic Assessment Tool (SESHAT)
 ![SESHAT logo](src/seshat_classifier/data/SESHAT_new.png "")
 
-This is a beta version of the SESHAT tool, currently being modified for publication.  
-The final version will be released pending any suggestions from the referee.
-
 Important caveat: In the current distribution, MIR data are necessary to classify YSOs to the expected performance. Without MIR data, the real performance deviates significantly from the synthetic set performance. This does not apply to other classes.
 
 If you use this package, please cite [Crompvoets et al. 2025](https://ui.adsabs.harvard.edu/abs/2025arXiv251007747C/abstract). Please also cite the original data producers:  
@@ -16,11 +13,11 @@ Galaxies: CIGALE -- [Burgarella et al. 2005](https://ui.adsabs.harvard.edu/abs/2
 
 ## Catalog set-up
 Please have your catalog set-up with the columns as:  
-Spitzer: ['IRAC1', 'IRAC2', 'IRAC3', 'IRAC4', 'MIPS1', 'MIPS2', 'MIPS3']  
+Spitzer: ['IRAC1', 'IRAC2', 'IRAC3', 'IRAC4', 'MIPS1']  
 2MASS: ['J', 'H', 'Ks']  
 JWST: in the frame of 'f090w', or 'f322w2'.  
 
-Please include errors as 'e_' + filter name; e.g. 'e_f090w'.  
+Please include errors as 'e_' + filter name; e.g. 'e_f090w', 'e_IRAC2'.  
 
 All columns must be in Vega mags.  
 

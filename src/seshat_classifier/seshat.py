@@ -224,7 +224,7 @@ def classify(real,
             probs = calibrator.predict_proba(dte[fcd_columns])
         else:
             probs = xgb_cls.predict_proba(dte[fcd_columns])
-        test_df = get_preds(probs=xgb_cls.predict_proba(dte[fcd_columns]), df=test_df, display_labels=new_classes)
+        test_df = get_preds(probs=probs, df=test_df, display_labels=new_classes)
         return (real, test_df, new_classes)
     
     return real
@@ -237,8 +237,8 @@ def get_preds(probs, df,display_labels):
     return df
 
 
-def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys'):
-    """ Create a confusion matrix with custom annotations showing both normalized values and counts.
+def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys', cbar=True):
+    """ Create a confusion matrix with custom annotations showing both normalized values and counts. 
     Inputs:
     y_true (array-like): True labels.
     y_pred (array-like): Predicted labels.
@@ -250,7 +250,14 @@ def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys'):
     ax (matplotlib axis): The axis with the confusion matrix plot."""
     # Get confusion matrix
     cm = confusion_matrix(y_true, y_pred, labels=display_labels)
+    bool_zeros = (cm == 0)
+    nan_columns = bool_zeros.all(axis=0)
+    cm = cm[:, ~nan_columns]
+    bool_zeros = (cm == 0)
+    nan_rows = bool_zeros.all(axis=1)
+    cm = cm[~nan_rows, :]
     cm_norm = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+    
 
     # Create custom annotations: normalized (first line), counts (second line)
     annot = np.empty_like(cm).astype(str)
@@ -280,6 +287,11 @@ def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys'):
     if len(display_labels) > 3:
         if 'Contaminant' in display_labels:
             display_labels[display_labels.index('Contaminant')] = 'Cont.'
+ 
+    display_labels = np.array(display_labels.copy())
+    xticklabels = display_labels[~nan_columns]
+    yticklabels = display_labels[~nan_rows]
+
     # Draw heatmap with custom annotations
     sns.heatmap(
         cm_norm,
@@ -289,10 +301,13 @@ def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys'):
         vmin=0,
         vmax=1,
         square=True,
-        xticklabels=display_labels,
-        yticklabels=display_labels,
+        # xticklabels=display_labels,
+        # yticklabels=display_labels,
+        xticklabels=xticklabels,
+        yticklabels=yticklabels,
         ax=ax,
-        cbar_kws={'label': 'Normalized value'}
+        cbar_kws={'label': 'Normalized value'},
+        cbar = cbar
     )
 
     ax.set_xlabel('Predicted label')
@@ -301,7 +316,7 @@ def cm_custom(y_true, y_pred, display_labels=None, ax=None, cmap='Greys'):
     return ax
 
 
-def add_noise(filters, df,df_real):
+def add_noise(filters, df, df_real):
     """ Add noise based on the wavelength as determined from real data. 
     
     Inputs:
@@ -316,11 +331,17 @@ def add_noise(filters, df,df_real):
     df = df.replace([np.inf, -np.inf], np.nan)
     
     # Randomly add or subtract error (i.e. +/- noise)
-    errs = np.array([np.random.choice(df_real.dropna(subset=[f,'e_'+f])[['e_'+f]].values.ravel(),len(df)) for f in filters]).T
+    df_real_tmp = df_real.dropna(subset=filters)
+    errs = np.array([np.random.choice(df_real_tmp[['e_'+f]].values.ravel(),len(df)) for f in filters]).T
     noise = np.random.normal(loc=0, scale=errs, size=(len(df), len(filters)))
+    errs_tiny = np.array([[np.nanmin(df_real_tmp['e_'+f])/10]*len(df) for f in filters]).T # Make very small error for non noisy data
+    noise_tiny = np.random.normal(loc=0, scale=errs, size=(len(df), len(filters)))
 
     df_tmp = df.copy()
     df_tmp[filters] = df[filters].to_numpy() + noise
+    df_tmp[["e_"+f for f in filters]] = errs
+    df[filters] = df[filters].to_numpy() + noise_tiny
+    df[["e_"+f for f in filters]] = errs_tiny 
     df_new = pd.concat([df, df_tmp], ignore_index=True)
 
     return df_new
@@ -350,19 +371,19 @@ def add_null_faint(df, filters, limiting_mags=None, frac = 0.1):
     # Extract the subset as NumPy array
     arr = df_null[filters].to_numpy()
 
-    # 1. Row-wise min value & index (ignoring NaNs)
+    # Find the minimum values and locations
     row_mins = np.nanmin(arr, axis=1)
     row_argmins = np.nanargmin(arr, axis=1)
 
-    # 2. Compute shift k per row
+    # Determine the shift necessary to put data in the same range as real data
     limiting_arr = np.array([limiting_mags[f] for f in filters])  
     row_limiting = limiting_arr[row_argmins]                      
     k = (row_limiting - np.random.uniform(2,4,len(row_mins))) - row_mins                             
 
-    # 3. Shift all filters in one go
+    # Shift data
     arr = arr + k[:, None]
 
-    # 4. Mask values dimmer than the limit
+    # Set fluxes lower than limits to nan 
     mask = arr > limiting_arr[None, :]   # compare against col-wise limits
     arr[mask] = np.nan
 
@@ -397,21 +418,21 @@ def add_null_bright(df, filters, saturating_mags=None, frac = 0.1):
     # Extract the subset as NumPy array
     arr = df_null[filters].to_numpy()
 
-    # Row-wise minimums
+    # Find maximum values and locations
     row_maxs = np.nanmax(arr, axis=1)
     row_argmaxs = np.nanargmax(arr, axis=1)
 
-    # 2. Compute shift k per row
+    # Determine the shift necessary to put data in the same range as real data
     limiting_arr = np.array([saturating_mags[f] for f in filters])  
     row_limiting = limiting_arr[row_argmaxs]   
-    # The magnitude of the dimmest filter will be 3 magnitude mags dimmer than the saturation limit.                 
+    # The magnitude of the dimmest filter will be 1-5 magnitude mags dimmer than the saturation limit.                 
     k = (row_limiting + np.random.uniform(1,5,len(row_maxs))) - row_maxs                             
 
-    # 3. Shift all filters in one go
+    # Shift data
     arr = arr + k[:, None]
 
-    # 4. Mask values brighter than the limit
-    mask = arr < limiting_arr[None, :]   # compare against col-wise limits
+    # Set all fluxes brighter than limits to nan
+    mask = arr < limiting_arr[None, :]
     arr[mask] = np.nan
 
     # Assign back
@@ -436,7 +457,7 @@ def add_null_random(df,filters,frac=0.3):
     n_rows, n_cols = arr.shape
 
     # Weighted probabilities for 0, 1, or 2 NaNs per row
-    weights = [1-frac, frac*3/4, frac*1/4]  # adjust as you like
+    weights = [1-frac, frac*3/4, frac*1/4]  
     n_nans_per_row = np.random.choice([0, 1, 2], size=n_rows, p=weights)
 
     # Row indices (repeated according to number of NaNs)
@@ -540,13 +561,13 @@ def prep_all_dat(df_train, df_real, filters):
     # Concatenate together (NOTE: we include the non-nulled rows to help the algorithm in training)
     df_train_new = pd.concat([df_train_null_faint, df_train_null_bright,df_train_null_messy],ignore_index=True).sample(frac=1,ignore_index=True)
     # For each filter, if there is a systematic missing amount of data not otherwise accounted for, we included further random nulls
-    for f in filters:
-        frac = len(df_real_new.loc[df_real_new[f].isna(),f])/len(df_real_new[f]) - len(df_train_new.loc[df_train_new[f].isna(),f])/len(df_train_new[f])
-        if frac < 0:
-            df_train_new = null_filter(df_train_new,f,frac=0.1)
-            continue
-        else:
-            df_train_new = null_filter(df_train_new,f,frac=frac)
+    # for f in filters:
+    #     frac = len(df_real_new.loc[df_real_new[f].isna(),f])/len(df_real_new[f]) - len(df_train_new.loc[df_train_new[f].isna(),f])/len(df_train_new[f])
+    #     if frac < 0:
+    #         df_train_new = null_filter(df_train_new,f,frac=0.1)
+    #         continue
+    #     else:
+    #         df_train_new = null_filter(df_train_new,f,frac=frac)
 
 
     # Get colours/other features
@@ -563,8 +584,6 @@ def prep_all_dat(df_train, df_real, filters):
 
     # Oversample training set and finish prepping
     df_train_new = oversample(df_train_new)
-    
-    fcd_columns = [c for c in df_train_new.columns if ('-' in c) | ('/' in c) | c.startswith('PCA_')]
     df_train_new = df_train_new.replace([np.inf, -np.inf], np.nan)
     df_val_new = df_val_new.replace([np.inf, -np.inf], np.nan)
     df_test_new = df_test_new.replace([np.inf, -np.inf], np.nan)
