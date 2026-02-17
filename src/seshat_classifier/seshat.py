@@ -169,11 +169,11 @@ def classify(real,
     # If there are no NaNs in the data, fill NaNs with 0: 
     # this leads to better performance than leaving empty 
     # and adds uncertainty that also leads to better performance
-    if len(real[real[filters].isna().any(axis=1)]) < 0.1*len(real):
-        dtrain.fillna(0,inplace=True)
-        dval.fillna(0,inplace=True)
-        dte.fillna(0,inplace=True)
-        dreal.fillna(0,inplace=True)
+    # if len(real[real[filters].isna().any(axis=1)]) < 0.1*len(real):
+    dtrain.fillna(0,inplace=True)
+    dval.fillna(0,inplace=True)
+    dte.fillna(0,inplace=True)
+    dreal.fillna(0,inplace=True)
     
     # Train XGBoost model
     xgb_cls = xgb.XGBClassifier(
