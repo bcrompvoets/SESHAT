@@ -486,7 +486,7 @@ def null_filter(df,filt,frac=0.1):
     return df_null
 
 
-def oversample(df, n = 10000):
+def oversample(df, n = 5000):
     """A simple function for oversampling all the classes in a dataframe to the same degree. 
     Takes as input a dataframe and returns a new dataframe with oversampled classes.
     NOTE: do not use prior to splitting data into training and validation as this will
