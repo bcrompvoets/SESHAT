@@ -561,13 +561,13 @@ def prep_all_dat(df_train, df_real, filters):
     # Concatenate together (NOTE: we include the non-nulled rows to help the algorithm in training)
     df_train_new = pd.concat([df_train_null_faint, df_train_null_bright,df_train_null_messy],ignore_index=True).sample(frac=1,ignore_index=True)
     # For each filter, if there is a systematic missing amount of data not otherwise accounted for, we included further random nulls
-    # for f in filters:
-    #     frac = len(df_real_new.loc[df_real_new[f].isna(),f])/len(df_real_new[f]) - len(df_train_new.loc[df_train_new[f].isna(),f])/len(df_train_new[f])
-    #     if frac < 0:
-    #         df_train_new = null_filter(df_train_new,f,frac=0.1)
-    #         continue
-    #     else:
-    #         df_train_new = null_filter(df_train_new,f,frac=frac)
+    for f in filters:
+        frac = len(df_real_new.loc[df_real_new[f].isna(),f])/len(df_real_new[f]) - len(df_train_new.loc[df_train_new[f].isna(),f])/len(df_train_new[f])
+        if frac < 0:
+            df_train_new = null_filter(df_train_new,f,frac=0.1)
+            continue
+        else:
+            df_train_new = null_filter(df_train_new,f,frac=frac)
 
 
     # Get colours/other features
