@@ -3,7 +3,7 @@
 
 Important caveat: In the current distribution, MIR data are necessary to classify YSOs to the expected performance. Without MIR data, the real performance deviates significantly from the synthetic set performance. This does not apply to other classes.
 
-If you use this package, please cite [Crompvoets et al. 2025](https://ui.adsabs.harvard.edu/abs/2025arXiv251007747C/abstract). Please also cite the original data producers:  
+If you use this package, please cite [Crompvoets et al. 2025](https://ui.adsabs.harvard.edu/abs/2025arXiv251007747C/abstract). Please also cite the original producers of the data used/producers of the software used to create the data used for this work:  
 YSOs: [Richardson et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024ApJ...961..188R/abstract)  
 Brown dwarfs: ATMO -- [Phillips et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)  
 White dwarfs: [Blouin et al. (2018)](https://ui.adsabs.harvard.edu/abs/2018ApJ...863..184B/abstract)  

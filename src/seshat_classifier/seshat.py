@@ -212,7 +212,9 @@ def classify(real,
         probs = calibrator.predict_proba(dreal[fcd_columns])
     else:
         probs = xgb_cls.predict_proba(dreal[fcd_columns])
+
     real = get_preds(probs=probs, df=real, display_labels=new_classes)
+
     if table:
         real = Table.from_pandas(real)
     
@@ -334,14 +336,14 @@ def add_noise(filters, df, df_real):
     df_real_tmp = df_real.dropna(subset=filters)
     errs = np.array([np.random.choice(df_real_tmp[['e_'+f]].values.ravel(),len(df)) for f in filters]).T
     noise = np.random.normal(loc=0, scale=errs, size=(len(df), len(filters)))
-    errs_tiny = np.array([[np.nanmin(df_real_tmp['e_'+f])/10]*len(df) for f in filters]).T # Make very small error for non noisy data
-    noise_tiny = np.random.normal(loc=0, scale=errs, size=(len(df), len(filters)))
+    # errs_tiny = np.array([[np.nanmin(df_real_tmp['e_'+f])/10]*len(df) for f in filters]).T # Make very small error for non noisy data
+    # noise_tiny = np.random.normal(loc=0, scale=errs, size=(len(df), len(filters)))
 
     df_tmp = df.copy()
     df_tmp[filters] = df[filters].to_numpy() + noise
     df_tmp[["e_"+f for f in filters]] = errs
-    df[filters] = df[filters].to_numpy() + noise_tiny
-    df[["e_"+f for f in filters]] = errs_tiny 
+    # df[filters] = df[filters].to_numpy() + noise_tiny
+    # df[["e_"+f for f in filters]] = errs_tiny 
     df_new = pd.concat([df, df_tmp], ignore_index=True)
 
     return df_new
@@ -371,7 +373,7 @@ def add_null_faint(df, filters, limiting_mags=None, frac = 0.1):
     # Extract the subset as NumPy array
     arr = df_null[filters].to_numpy()
 
-    # Find the minimum values and locations
+    # Find the dimmest values and locations
     row_mins = np.nanmin(arr, axis=1)
     row_argmins = np.nanargmin(arr, axis=1)
 
@@ -418,7 +420,7 @@ def add_null_bright(df, filters, saturating_mags=None, frac = 0.1):
     # Extract the subset as NumPy array
     arr = df_null[filters].to_numpy()
 
-    # Find maximum values and locations
+    # Find brightest values and locations
     row_maxs = np.nanmax(arr, axis=1)
     row_argmaxs = np.nanargmax(arr, axis=1)
 
@@ -505,7 +507,8 @@ def oversample(df, n = 5000):
         df_l.reset_index(drop=True,inplace=True)
         df_l = pd.concat([df_l]*int(np.ceil(n/len(df_l))),ignore_index=True).reset_index(drop=True)
         
-        # Intentionally do not oversample the brown and white dwarfs to keep these classes imbalanced.
+        # Intentionally do not oversample the brown and white dwarfs to the same extent
+        #  to keep these classes imbalanced.
         if (label == "WD") | (label == "BD"):
             rand_samp = random.sample(range(0,len(df_l[df_l.Class==label])),int(n/2))
         else:
@@ -515,7 +518,9 @@ def oversample(df, n = 5000):
             df_new = pd.concat([df_l.loc[rand_samp].copy(),df_new])
         except:
             df_new = df_l.loc[rand_samp].copy()
+
     df_new = df_new.sample(frac=1).reset_index(drop=True)
+
     return df_new
         
 def prep_all_dat(df_train, df_real, filters):
@@ -545,7 +550,7 @@ def prep_all_dat(df_train, df_real, filters):
     # Acquire limiting and saturating mags from real data
     limiting_mags = {f:np.nanquantile(df_real_new[f].values,0.99) for f in filters}
     saturating_mags = {f:np.nanquantile(df_real_new[f].values,0.01) for f in filters}
-    # Choose 30% of the sample to fill with null values
+    # Double the sample to fill with null values
     df_train_null = df_train_new.sample(frac=1,ignore_index=True) 
     # Split between null from out of frame or messy data; and saturated/undetected
     df_train_null_detectable, df_train_null_messy = train_test_split(df_train_null, train_size=0.75, random_state=700) 
