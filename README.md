@@ -1,9 +1,9 @@
 # Stellar Evolutionary Stage Heuristic Assessment Tool (SESHAT)
-![SESHAT logo](src/seshat_classifier/data/SESHAT_new.png "")
+![SESHAT logo](src/seshat_classifier/data/SESHAT_new.png "SESHAT Logo")
 
 Important caveat: In the current distribution, MIR data are necessary to classify YSOs to the expected performance. Without MIR data, the real performance deviates significantly from the synthetic set performance. This does not apply to other classes.
 
-If you use this package, please cite [Crompvoets et al. 2025](https://ui.adsabs.harvard.edu/abs/2025arXiv251007747C/abstract). Please also cite the original producers of the data used/producers of the software used to create the data used for this work:  
+If you use this package, please cite [Crompvoets et al. 2026](https://ui.adsabs.harvard.edu/abs/2026AJ....171..278C/abstract). Please also cite the original producers of the data used/producers of the software used to create the data used for this work:  
 YSOs: [Richardson et al. (2024)](https://ui.adsabs.harvard.edu/abs/2024ApJ...961..188R/abstract)  
 Brown dwarfs: ATMO -- [Phillips et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)  
 White dwarfs: [Blouin et al. (2018)](https://ui.adsabs.harvard.edu/abs/2018ApJ...863..184B/abstract)  
@@ -83,3 +83,9 @@ test_results = seshat.test_filters(filters = filters, classes=classes, limiting_
 ax = seshat.cm_custom(test_results.Class,test_results.Predicted_Class,cmap='Greys',display_labels=classes)
 plt.show()
 ~~~
+
+## Frequently Asked Questions (FAQ)
+### Q. Do I need to correct for extinction?
+    A. No, SESHAT assumes that the objects are extincted by some amount between 0 and 50 Av already.
+### Q. Do I have to worry about having variable completeness?
+    A. No, the limiting and saturating magnitudes are calculated at the 95th percentile, and the data are adjusted randomly to variably be above and below this threshold. Futhermore, only colours are used rather than magnitudes, and thus the exact level of completeness does not impact the model. See paper for details. 
