@@ -42,7 +42,7 @@ A. No, SESHAT assumes that the objects are extincted by some amount between 0 an
 ### Q. Do I have to worry about having variable completeness?
 A. No, the limiting and saturating magnitudes are calculated at the 95th percentile, and the data are adjusted randomly to variably be above and below this threshold. Futhermore, only colours are used rather than magnitudes, and thus the exact level of completeness does not impact the model. See paper for details. 
 ### Q. What is the minimum number of filters needed for classification?
-A. It depends on the filters you are using. Generally, it is recommended to use a minimum of four filters, with one of those being $\gteq$ 10 μm. 
+A. It depends on the filters you are using. Generally, it is recommended to use a minimum of four filters, with one of those being $\geq$ 10 μm. 
 ### Q. If I'm only interested in YSOs, I just need to put ['YSO'] as my input classes?
 A. NO! You must include all of the classes you expect to be present. If you exclude a class, then the algorithm will assume it is not there. For extragalactic fields, one may only be expecting field stars, galaxies, white dwarfs, and brown dwarfs, whereas in a YSO field, one may only expect field stars, galaxies, YSOs, and brown dwarfs. It is very important to include all the classes you expect might be contaminating.
 
